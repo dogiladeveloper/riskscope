@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RiskScope — On-Chain Wallet Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;700&family=Bebas+Neue&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f0e8;
+  --surface: #ffffff;
+  --surface2: #f0ebe0;
+  --border: #d8d0c0;
+  --dark: #1a1410;
+  --accent: #c8401a;
+  --accent2: #1a6bc8;
+  --accent3: #1a8c3a;
+  --warn: #c87a1a;
+  --text: #1a1410;
+  --text2: #6a6050;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  min-height: 100vh;
+}
+
+/* Noise texture overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+.container { max-width: 1200px; margin: 0 auto; padding: 0 32px; position: relative; z-index: 1; }
+
+/* Header */
+header {
+  background: var(--dark);
+  padding: 20px 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.logo {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.logo-main {
+  font-family: var(--font-display);
+  font-size: 28px;
+  color: #fff;
+  letter-spacing: 2px;
+}
+.logo-sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #888;
+  letter-spacing: 1px;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.x402-badge {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 1px;
+  background: rgba(200,64,26,0.2);
+  border: 1px solid rgba(200,64,26,0.4);
+  color: #ff6644;
+  padding: 4px 10px;
+}
+.ows-badge {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 1px;
+  background: rgba(26,108,200,0.2);
+  border: 1px solid rgba(26,108,200,0.4);
+  color: #4499ff;
+  padding: 4px 10px;
+}
+
+/* Hero */
+.hero {
+  padding: 80px 0 60px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+.hero-left h1 {
+  font-family: var(--font-display);
+  font-size: clamp(60px, 8vw, 110px);
+  line-height: 0.9;
+  letter-spacing: 2px;
+  color: var(--dark);
+  margin-bottom: 24px;
+}
+.hero-left h1 .red { color: var(--accent); }
+.hero-desc {
+  font-size: 15px;
+  color: var(--text2);
+  line-height: 1.7;
+  margin-bottom: 32px;
+  font-weight: 300;
+}
+.hero-stats {
+  display: flex;
+  gap: 40px;
+}
+.hero-stat-num {
+  font-family: var(--font-display);
+  font-size: 36px;
+  color: var(--dark);
+  letter-spacing: 1px;
+}
+.hero-stat-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text2);
+  letter-spacing: 1px;
+}
+
+/* Search */
+.search-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 32px;
+  box-shadow: 4px 4px 0 var(--border);
+}
+.search-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--text2);
+  margin-bottom: 12px;
+}
+.search-row {
+  display: flex;
+  gap: 0;
+}
+.search-input {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-right: none;
+  padding: 14px 16px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text);
+  outline: none;
+}
+.search-input::placeholder { color: var(--text2); }
+.search-input:focus { border-color: var(--accent); background: #fff; }
+.search-btn {
+  background: var(--dark);
+  color: #fff;
+  border: none;
+  padding: 14px 24px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.search-btn:hover { background: var(--accent); }
+.search-examples {
+  margin-top: 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text2);
+}
+.search-examples a {
+  color: var(--accent2);
+  cursor: pointer;
+  text-decoration: none;
+}
+.search-examples a:hover { text-decoration: underline; }
+.pricing-note {
+  margin-top: 16px;
+  padding: 10px 14px;
+  background: var(--surface2);
+  border-left: 3px solid var(--accent);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text2);
+}
+
+/* Results */
+.results {
+  padding: 60px 0;
+  display: none;
+}
+.results.show { display: block; }
+
+.result-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 40px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+.result-address {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text2);
+  margin-bottom: 8px;
+}
+.result-title {
+  font-family: var(--font-display);
+  font-size: 36px;
+  letter-spacing: 2px;
+}
+.risk-meter {
+  text-align: right;
+}
+.risk-score {
+  font-family: var(--font-display);
+  font-size: 72px;
+  line-height: 1;
+  letter-spacing: 2px;
+}
+.risk-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 2px;
+}
+
+/* Grid */
+.result-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+.result-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 24px;
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 24px;
+}
+.card-title {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--text2);
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Risk flags */
+.flags-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.flag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  padding: 4px 10px;
+  border: 1px solid;
+}
+.flag-high { color: var(--accent); border-color: rgba(200,64,26,0.3); background: rgba(200,64,26,0.05); }
+.flag-med { color: var(--warn); border-color: rgba(200,122,26,0.3); background: rgba(200,122,26,0.05); }
+.flag-low { color: var(--accent3); border-color: rgba(26,140,58,0.3); background: rgba(26,140,58,0.05); }
+
+/* Stats */
+.stat-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--surface2); }
+.stat-row:last-child { border-bottom: none; }
+.stat-row-label { font-family: var(--font-mono); font-size: 10px; color: var(--text2); letter-spacing: 1px; }
+.stat-row-val { font-family: var(--font-mono); font-size: 12px; font-weight: 500; }
+
+/* TX list */
+.tx-list { display: flex; flex-direction: column; gap: 6px; }
+.tx-item {
+  display: grid;
+  grid-template-columns: 100px 1fr 80px;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--surface2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  align-items: center;
+}
+.tx-hash { color: var(--accent2); overflow: hidden; text-overflow: ellipsis; }
+.tx-type { color: var(--text2); }
+.tx-value { text-align: right; color: var(--text); }
+
+/* OWS proof */
+.ows-proof-card {
+  background: var(--dark);
+  color: #fff;
+  padding: 24px;
+  border: none;
+  margin-top: 24px;
+}
+.ows-proof-title {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #888;
+  margin-bottom: 16px;
+}
+.ows-proof-data {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 2;
+  color: #aaa;
+}
+.ows-proof-data span { color: #4f9; }
+.ows-proof-data .red { color: #f66; }
+
+/* Payment */
+.payment-card {
+  background: var(--surface2);
+  border: 2px solid var(--dark);
+  padding: 20px 24px;
+  margin-top: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.payment-info { font-family: var(--font-mono); font-size: 11px; color: var(--text2); }
+.payment-amount { font-family: var(--font-display); font-size: 28px; color: var(--dark); }
+
+/* Loading */
+.loading-overlay {
+  display: none;
+  text-align: center;
+  padding: 60px;
+}
+.loading-overlay.show { display: block; }
+.loading-spinner {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text2);
+  letter-spacing: 2px;
+  animation: fade-pulse 1s infinite;
+}
+@keyframes fade-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* How it works */
+.how-section {
+  padding: 60px 0;
+  border-top: 1px solid var(--border);
+}
+.how-title {
+  font-family: var(--font-display);
+  font-size: 48px;
+  letter-spacing: 2px;
+  margin-bottom: 40px;
+}
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+}
+.step {
+  background: var(--surface);
+  padding: 28px 24px;
+}
+.step-num {
+  font-family: var(--font-display);
+  font-size: 48px;
+  color: var(--border);
+  line-height: 1;
+  margin-bottom: 12px;
+}
+.step-title { font-weight: 600; font-size: 14px; margin-bottom: 8px; }
+.step-desc { font-size: 12px; color: var(--text2); line-height: 1.6; }
+
+footer {
+  background: var(--dark);
+  color: #888;
+  padding: 32px 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+.footer-inner { display: flex; justify-content: space-between; align-items: center; }
+.footer-links { display: flex; gap: 20px; }
+.footer-links a { color: #888; text-decoration: none; }
+.footer-links a:hover { color: #fff; }
+
+@media (max-width: 768px) {
+  .hero { grid-template-columns: 1fr; gap: 40px; padding: 40px 0; }
+  .result-grid, .result-grid-3 { grid-template-columns: 1fr; }
+  .steps { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-main">RISKSCOPE</div>
+        <div class="logo-sub">// ONCHAIN INTELLIGENCE</div>
+      </div>
+      <div class="header-right">
+        <span class="x402-badge">x402 PAYMENTS</span>
+        <span class="ows-badge">OWS POWERED</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="hero">
+    <div class="hero-left">
+      <h1>WALLET<br><span class="red">RISK</span><br>INTEL.</h1>
+      <p class="hero-desc">
+        Paste any Ethereum wallet address. Our OWS-powered agent scans the counterparty graph, analyzes behavioral patterns, and delivers a full risk profile — charged per-scan via x402.
+      </p>
+      <div class="hero-stats">
+        <div>
+          <div class="hero-stat-num">340K+</div>
+          <div class="hero-stat-label">AI AGENT WALLETS</div>
+        </div>
+        <div>
+          <div class="hero-stat-num">8</div>
+          <div class="hero-stat-label">CHAINS SUPPORTED</div>
+        </div>
+        <div>
+          <div class="hero-stat-num">x402</div>
+          <div class="hero-stat-label">PAY PER SCAN</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="search-card">
+      <div class="search-label">// ENTER WALLET ADDRESS</div>
+      <div class="search-row">
+        <input 
+          class="search-input" 
+          id="addr-input"
+          placeholder="0x742d35Cc6634C0532925a3b..."
+          maxlength="42"
+        />
+        <button class="search-btn" onclick="scanWallet()">SCAN →</button>
+      </div>
+      <div class="search-examples">
+        Try: 
+        <a onclick="setAddr('0x742d35Cc6634C0532925a3b844Bc9e7595f2bD0C')">Vitalik.eth</a> · 
+        <a onclick="setAddr('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045')">0xd8dA...</a> ·
+        <a onclick="setAddr('0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B')">Random</a>
+      </div>
+      <div class="pricing-note">
+        Each scan costs <strong>0.001 USDC</strong> · Paid automatically via x402 protocol · Signed by OWS observatory agent
+      </div>
+    </div>
+  </div>
+
+  <div class="loading-overlay" id="loading">
+    <div class="loading-spinner">⟳ SCANNING ON-CHAIN DATA · OWS AGENT PROCESSING...</div>
+  </div>
+
+  <div class="results" id="results">
+    <div class="result-header">
+      <div>
+        <div class="result-address" id="res-addr">0x...</div>
+        <div class="result-title">RISK ANALYSIS REPORT</div>
+      </div>
+      <div class="risk-meter">
+        <div class="risk-score" id="res-score" style="color: var(--accent)">--</div>
+        <div class="risk-label" id="res-level" style="color: var(--text2)">RISK LEVEL</div>
+      </div>
+    </div>
+
+    <div class="result-grid">
+      <div class="card">
+        <div class="card-title">// RISK FLAGS DETECTED</div>
+        <div class="flags-list" id="res-flags"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">// WALLET STATS</div>
+        <div id="res-stats"></div>
+      </div>
+    </div>
+
+    <div class="result-grid-3">
+      <div class="card" style="grid-column: span 2">
+        <div class="card-title">// RECENT TRANSACTIONS</div>
+        <div class="tx-list" id="res-txs"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">// TOKEN EXPOSURE</div>
+        <div id="res-tokens"></div>
+      </div>
+    </div>
+
+    <div class="ows-proof-card">
+      <div class="ows-proof-title">// OWS AGENT SIGNING PROOF</div>
+      <div class="ows-proof-data" id="res-ows"></div>
+    </div>
+
+    <div class="payment-card">
+      <div class="payment-info">
+        <div>SCAN CHARGED VIA x402 PROTOCOL</div>
+        <div id="res-payment-detail" style="margin-top:4px;color:#999"></div>
+      </div>
+      <div class="payment-amount" id="res-payment">0.001 USDC</div>
+    </div>
+  </div>
+
+  <div class="how-section">
+    <div class="how-title">HOW IT WORKS</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-title">Submit Address</div>
+        <div class="step-desc">Paste any EVM wallet address. Payment of 0.001 USDC is automatically charged via x402 protocol.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-title">OWS Agent Scans</div>
+        <div class="step-desc">The OWS observatory agent fans out across on-chain data — transactions, tokens, counterparty graph.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-title">Risk Scored</div>
+        <div class="step-desc">Behavioral patterns, flag analysis, and counterparty exposure generate a 0-100 risk score.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <div class="step-title">Signed Report</div>
+        <div class="step-desc">Every report is cryptographically signed by the OWS agent wallet. Verifiable, tamper-proof.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div>RISKSCOPE · BUILT FOR OWS HACKATHON 2026 · THE OBSERVATORY TRACK</div>
+      <div class="footer-links">
+        <a href="https://openwallet.sh">openwallet.sh</a>
+        <a href="https://hackathon.openwallet.sh">Hackathon</a>
+        <a href="https://github.com/open-wallet-standard/core">GitHub</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+const API = '';
+
+function setAddr(addr) {
+  document.getElementById('addr-input').value = addr;
+  scanWallet();
+}
+
+async function scanWallet() {
+  const addr = document.getElementById('addr-input').value.trim();
+  if (!addr.match(/^0x[0-9a-fA-F]{40}$/)) {
+    alert('Please enter a valid Ethereum address (0x...)');
+    return;
+  }
+
+  document.getElementById('loading').className = 'loading-overlay show';
+  document.getElementById('results').className = 'results';
+
+  try {
+    const r = await fetch(API + '/api/scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address: addr })
+    });
+    const d = await r.json();
+    renderResults(d);
+  } catch (e) {
+    alert('Scan failed: ' + e.message);
+  } finally {
+    document.getElementById('loading').className = 'loading-overlay';
+  }
+}
+
+function renderResults(d) {
+  document.getElementById('res-addr').textContent = d.address;
+  
+  const scoreEl = document.getElementById('res-score');
+  scoreEl.textContent = d.risk.score;
+  scoreEl.style.color = d.risk.risk_color;
+  
+  const levelEl = document.getElementById('res-level');
+  levelEl.textContent = d.risk.risk_level + ' RISK';
+  levelEl.style.color = d.risk.risk_color;
+
+  // Flags
+  const flagClass = { 'LOW': 'flag-low', 'MEDIUM': 'flag-med', 'HIGH': 'flag-high', 'CRITICAL': 'flag-high' };
+  const fc = flagClass[d.risk.risk_level] || 'flag-med';
+  document.getElementById('res-flags').innerHTML = 
+    (d.risk.flags.length ? d.risk.flags : ['CLEAN']).map(f => 
+      `<span class="flag ${fc}">${f}</span>`
+    ).join('') +
+    d.risk.insights.map(i => `<span class="flag flag-low">${i}</span>`).join('');
+
+  // Stats
+  const s = d.risk.stats;
+  document.getElementById('res-stats').innerHTML = `
+    <div class="stat-row"><span class="stat-row-label">ETH BALANCE</span><span class="stat-row-val">${d.data.balance_eth} ETH</span></div>
+    <div class="stat-row"><span class="stat-row-label">TX COUNT</span><span class="stat-row-val">${d.data.tx_count}</span></div>
+    <div class="stat-row"><span class="stat-row-label">TOKEN TRANSFERS</span><span class="stat-row-val">${d.data.token_transfers?.length || 0}</span></div>
+    <div class="stat-row"><span class="stat-row-label">COUNTERPARTIES</span><span class="stat-row-val">${s.unique_counterparties}</span></div>
+    <div class="stat-row"><span class="stat-row-label">CONTRACT OPS</span><span class="stat-row-val">${s.contract_interactions ? 'YES' : 'NO'}</span></div>
+  `;
+
+  // Transactions
+  const txs = d.data.recent_txs || [];
+  document.getElementById('res-txs').innerHTML = txs.length ? txs.map(tx => `
+    <div class="tx-item">
+      <span class="tx-hash">${tx.hash ? tx.hash.substring(0,12)+'...' : 'N/A'}</span>
+      <span class="tx-type">${tx.input && tx.input !== '0x' ? 'CONTRACT' : 'TRANSFER'} → ${tx.to ? tx.to.substring(0,10)+'...' : 'N/A'}</span>
+      <span class="tx-value">${tx.value ? (parseInt(tx.value)/1e18).toFixed(4) : '0'} ETH</span>
+    </div>
+  `).join('') : '<div style="font-family:var(--font-mono);font-size:11px;color:var(--text2);padding:12px 0">No recent transactions found</div>';
+
+  // Tokens
+  const tokens = d.data.tokens || [];
+  document.getElementById('res-tokens').innerHTML = tokens.length ? 
+    tokens.map(t => `
+      <div class="stat-row">
+        <span class="stat-row-label">${t.tokenSymbol || 'UNKNOWN'}</span>
+        <span class="stat-row-val" style="font-size:10px">${t.tokenName || ''}</span>
+      </div>
+    `).join('') :
+    '<div style="font-family:var(--font-mono);font-size:11px;color:var(--text2);padding:8px 0">No token transfers</div>';
+
+  // OWS proof
+  document.getElementById('res-ows').innerHTML = `
+    <div>SCAN REQUEST: <span>RiskScope scan: ${d.address}</span></div>
+    <div>SIGNED BY: <span>OWS:${d.ows_proof.wallet}</span></div>
+    <div>OWS OUTPUT: <span>${d.ows_proof.output || 'Signed successfully'}</span></div>
+    <div>TIMESTAMP: <span>${d.scanned_at}</span></div>
+    <div style="margin-top:8px;font-size:10px;color:#666">✓ Private key never exposed · In-process signing · Key wiped after use · OWS v1.2.0</div>
+  `;
+
+  // Payment
+  document.getElementById('res-payment').textContent = `${d.payment.amount} ${d.payment.currency}`;
+  document.getElementById('res-payment-detail').textContent = 
+    `TX: ${d.payment.tx} · Signed by: ${d.payment.signed_by}`;
+
+  document.getElementById('results').className = 'results show';
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Enter key
+document.getElementById('addr-input').addEventListener('keypress', e => {
+  if (e.key === 'Enter') scanWallet();
+});
+</script>
+</body>
+</html>
