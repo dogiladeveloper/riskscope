@@ -1,63 +1,167 @@
 # RiskScope 🔍
 
-> On-chain wallet risk screener powered by the Open Wallet Standard
+> On-chain wallet intelligence powered by the Open Wallet Standard
+
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-riskscope.xyz-c8401a?style=for-the-badge)](https://riskscope.xyz)
+[![OWS](https://img.shields.io/badge/OWS-v1.2.0-c8401a?style=flat-square)](https://openwallet.sh)
+[![x402](https://img.shields.io/badge/Payments-x402-ff6600?style=flat-square)](https://x402.org)
+[![Track](https://img.shields.io/badge/Track-The%20Observatory-1a6bc8?style=flat-square)](https://hackathon.openwallet.sh)
 
 **OWS Hackathon 2026 — The Observatory Track**
 
-[![Live Demo](https://img.shields.io/badge/Live-riskscope.xyz-c8401a?style=flat-square)](https://riskscope.xyz)
-[![OWS](https://img.shields.io/badge/Powered%20by-OWS%20v1.2.0-c8401a?style=flat-square)](https://openwallet.sh)
+---
 
-## What it does
+## 🎯 What It Does
 
-RiskScope is an on-chain intelligence tool that scans any Ethereum wallet address and generates a full risk profile — counterparty graph, behavioral patterns, token exposure — charged per-scan via x402 protocol.
+RiskScope is a pay-per-scan on-chain wallet intelligence tool. Enter any Ethereum address or ENS name — the OWS observatory agent scans the entire on-chain footprint, builds a counterparty graph, and delivers a signed risk report. Each scan costs **0.001 USDC** via x402 protocol.
 
-## How it works
+**[→ Live Demo: riskscope.xyz](https://riskscope.xyz)**
 
-1. User submits an Ethereum wallet address
-2. x402 payment of 0.001 USDC charged automatically
-3. OWS observatory agent signs the scan request
-4. Agent fans out across on-chain data (txs, tokens, counterparties)
-5. Risk score 0-100 generated with flag analysis
-6. Signed report returned — tamper-proof, verifiable
+---
 
-## Required Stack
+## 🏗 Architecture
 
-- ✅ OWS CLI v1.2.0
-- ✅ OWS wallet for scan signing (observatory-agent)
-- ✅ MoonPay agent skill integration
-- ✅ Allium data endpoints as intelligence layer
-- ✅ x402 for per-scan monetization
-
-## Risk Scoring
-
-| Score | Level | Description |
-|-------|-------|-------------|
-| 0-20 | LOW | Clean wallet, normal activity |
-| 21-50 | MEDIUM | Some flags, moderate risk |
-| 51-75 | HIGH | Multiple risk signals |
-| 76-100 | CRITICAL | High risk, investigate |
-
-## Architecture
 ```
-Wallet Address → x402 Payment → OWS Sign → On-chain Scan → Risk Score → Signed Report
-                                    ↑
-                           observatory-agent wallet
-                           (keys never exposed)
-```
-
-## OWS Wallet
-```
-Wallet: observatory-agent
-Chain: eip155:1 (Ethereum)
-Address: 0x575AfEdDDE98dC173744D2e02b7e6F84Be58a0Ef
+User Input (0x... or ENS name)
+        │
+        ▼
+  ENS Resolution (ensdata.net)
+        │
+        ▼
+  OWS Observatory Agent ──── Signs scan request
+  (observatory-agent wallet)
+        │
+        ▼
+  Etherscan V2 API
+  ┌─────────────────────────────────┐
+  │  ETH Balance                    │
+  │  Transaction History (nonce)    │
+  │  Token Transfers (ERC-20)       │
+  │  Counterparty Graph             │
+  └─────────────────────────────────┘
+        │
+        ▼
+  Risk Scoring Engine
+  (0-100 score, flags, insights)
+        │
+        ▼
+  x402 Payment (0.001 USDC)
+        │
+        ▼
+  Signed Risk Report
 ```
 
-## Quick Start
+---
+
+## ✨ Features
+
+- **Real On-chain Data** — Etherscan V2 API, live balances & transactions
+- **ENS Support** — Enter `vitalik.eth` or any `.eth` name
+- **Risk Scoring** — 0-100 score with LOW/MEDIUM/HIGH/CRITICAL levels
+- **Counterparty Analysis** — Unique counterparty count, behavioral patterns
+- **Token Exposure** — Full ERC-20 token history with amounts
+- **OWS Signing Proof** — Every scan cryptographically signed & verifiable
+- **x402 Monetization** — 0.001 USDC per scan via x402 protocol
+- **Mobile Responsive** — Works on any device
+
+---
+
+## 🔧 Required Stack
+
+| Component | Usage |
+|-----------|-------|
+| **OWS CLI v1.2.0** | Wallet management & scan signing |
+| **OWS Wallet** | `observatory-agent` — scan authentication |
+| **MoonPay Agent Skill** | Payment integration |
+| **Allium / Etherscan V2** | On-chain data intelligence layer |
+| **x402 Protocol** | Per-scan monetization |
+| **Node.js + Express** | Backend API server |
+
+---
+
+## 🚀 Quick Start
+
 ```bash
+# Install OWS
+npm install -g @open-wallet-standard/core
+
+# Create observatory wallet
+ows wallet create --name observatory-agent
+
+# Install dependencies
 npm install
+
+# Start server
 node server.js
 ```
 
-## Live Demo
+Visit `http://localhost:3002`
 
-Visit [riskscope.xyz](https://riskscope.xyz) — paste any Ethereum address to get a full risk report.
+---
+
+## 🔐 OWS Integration
+
+```javascript
+// Every scan request signed by OWS agent
+const owsResult = owsCmd(
+  `ows sign message --wallet observatory-agent --chain evm --message "RiskScope scan: ${address}"`
+);
+// Returns verifiable cryptographic proof
+// Key wiped after signing — agent never sees private key
+```
+
+**Wallet:** `observatory-agent`  
+**Chain:** `eip155:1` (Ethereum)  
+**Address:** `0x575AfEdDDE98dC173744D2e02b7e6F84Be58a0Ef`
+
+---
+
+## 📊 Risk Scoring
+
+| Score | Level | Flags |
+|-------|-------|-------|
+| 0-20 | 🟢 LOW | CLEAN |
+| 21-50 | 🟡 MEDIUM | LOW_ACTIVITY, MANY_TOKENS |
+| 51-75 | 🟠 HIGH | HIGH_VOLUME, MANY_COUNTERPARTIES |
+| 76-100 | 🔴 CRITICAL | Multiple risk signals |
+
+---
+
+## 💰 x402 Monetization
+
+```
+Scan Request → x402 Payment (0.001 USDC) → OWS Signs → Report Delivered
+```
+
+- **Price:** 0.001 USDC per scan
+- **Protocol:** x402 (HTTP-native stablecoin payments)
+- **Signed by:** OWS observatory-agent wallet
+- **Use cases:** VC due diligence, DeFi risk assessment, compliance
+
+---
+
+## 🏆 Hackathon
+
+Built for **OWS Hackathon 2026 — The Observatory Track**
+
+**Judged on:** Quality of onchain intelligence, depth of data usage, creativity of x402 monetization — real data, real payments, not mocked.
+
+- [hackathon.openwallet.sh](https://hackathon.openwallet.sh)
+- [openwallet.sh](https://openwallet.sh)
+- [github.com/open-wallet-standard/core](https://github.com/open-wallet-standard/core)
+
+---
+
+## 📁 Project Structure
+
+```
+riskscope/
+├── server.js          # Express API + OWS + Etherscan integration
+├── public/
+│   └── index.html     # Risk scanner UI
+└── package.json
+```
+
+---
+
+*Built with ❤️ using Open Wallet Standard v1.2.0*
