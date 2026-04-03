@@ -12,6 +12,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 const OWS_WALLET = 'observatory-agent';
+const ALLIUM_KEY = 'ZdxW3ZH6rUOyebryRg6HOpy-Svcm5yB02e4te1po0Q40H9GWGTeL-Ye42KTV2p6TrIu5Qkg61P4bT7O3uzCqtQ';
 const ETHERSCAN_KEY = 'MBF1F8G1BRUC7F8CF7PMEM3Z5RNZYWD5QH';
 
 function owsCmd(cmd) {
@@ -19,6 +20,34 @@ function owsCmd(cmd) {
     const nvm = `export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"`;
     return { success: true, output: execSync(`bash -c '${nvm} && ${cmd}'`, { encoding: 'utf8' }).trim() };
   } catch (e) { return { success: false, error: e.message }; }
+}
+
+async function fetchAlliumData(address) {
+  try {
+    const [txRes, balRes] = await Promise.all([
+      axios.post('https://api.allium.so/api/v1/developer/wallet/transactions',
+        [{"chain": "ethereum", "address": address.toLowerCase()}],
+        { headers: { 'X-API-Key': ALLIUM_KEY, 'Content-Type': 'application/json' }, timeout: 10000 }
+      ),
+      axios.post('https://api.allium.so/api/v1/developer/wallet/balances',
+        [{"chain": "ethereum", "address": address.toLowerCase()}],
+        { headers: { 'X-API-Key': ALLIUM_KEY, 'Content-Type': 'application/json' }, timeout: 10000 }
+      )
+    ]);
+    const txs = txRes.data?.items || [];
+    const bals = balRes.data?.items || [];
+    return { 
+      allium_txs: txs, 
+      allium_balances: bals,
+      labels: [...new Set(txs.flatMap(t => t.labels || []))],
+      tx_count: txs.length,
+      has_defi: txs.some(t => (t.labels||[]).some(l => ['swap','defi','bridge'].includes(l))),
+      has_nft: txs.some(t => (t.labels||[]).includes('nft')),
+    };
+  } catch(e) {
+    console.log('Allium error:', e.message);
+    return null;
+  }
 }
 
 async function fetchRealData(address) {
@@ -138,7 +167,10 @@ app.post('/api/scan', async (req, res) => {
     }
 
     const owsResult = owsCmd(`ows sign message --wallet ${OWS_WALLET} --chain evm --message "RiskScope scan: ${address}"`);
-    const data = await fetchRealData(address);
+    const [data, alliumData] = await Promise.all([
+      fetchRealData(address),
+      fetchAlliumData(address)
+    ]);
     const risk = calculateRisk(address, data);
 
     res.json({
@@ -157,6 +189,12 @@ app.post('/api/scan', async (req, res) => {
         wallet: OWS_WALLET,
         output: owsResult.output || owsResult.error
       },
+      allium: alliumData ? {
+        labels: alliumData.labels,
+        has_defi: alliumData.has_defi,
+        has_nft: alliumData.has_nft,
+        powered_by: 'Allium Intelligence API'
+      } : null,
       payment: {
         amount: '0.001',
         currency: 'USDC',

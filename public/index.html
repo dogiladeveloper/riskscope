@@ -530,6 +530,13 @@ footer {
       </div>
     </div>
 
+    <div class="card" style="background:linear-gradient(135deg,#1a0a2e,#0d1a2e);border:1px solid #3a1a6e;margin-bottom:24px;">
+      <div class="card-title" style="color:#a855f7;border-bottom-color:#3a1a6e">// ALLIUM INTELLIGENCE LAYER</div>
+      <div id="res-allium" style="font-family:var(--font-mono);font-size:11px;color:#ccc;line-height:2">
+        <span style="color:#888">Powered by Allium blockchain intelligence API</span>
+      </div>
+    </div>
+
     <div class="ows-proof-card">
       <div class="ows-proof-title">// OWS AGENT SIGNING PROOF</div>
       <div class="ows-proof-data" id="res-ows"></div>
@@ -684,6 +691,17 @@ function renderResults(d) {
       </div>`;
     }).join('') :
     '<div style="font-family:var(--font-mono);font-size:11px;color:var(--text2);padding:8px 0">No token transfers</div>';
+
+  // Allium
+  const alliumEl = document.getElementById('res-allium');
+  if (alliumEl && d.allium) {
+    const a = d.allium;
+    alliumEl.innerHTML = 
+      '<div>ACTIVITY LABELS: <span style="color:#a855f7">' + (a.labels||[]).join(', ').toUpperCase() + '</span></div>' +
+      '<div>DEFI ACTIVITY: <span style="color:' + (a.has_defi?'#00ff88':'#888') + '">' + (a.has_defi?'DETECTED':'NONE') + '</span></div>' +
+      '<div>NFT ACTIVITY: <span style="color:' + (a.has_nft?'#00ff88':'#888') + '">' + (a.has_nft?'DETECTED':'NONE') + '</span></div>' +
+      '<div style="margin-top:8px;font-size:9px;color:#666">✓ ' + a.powered_by + '</div>';
+  }
 
   // OWS proof
   document.getElementById('res-ows').innerHTML = `
