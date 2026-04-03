@@ -13,6 +13,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const OWS_WALLET = 'observatory-agent';
 const ALLIUM_KEY = 'ZdxW3ZH6rUOyebryRg6HOpy-Svcm5yB02e4te1po0Q40H9GWGTeL-Ye42KTV2p6TrIu5Qkg61P4bT7O3uzCqtQ';
+const ZERION_KEY = 'zk_775236c4548d4b7b92396ae1fb2fedfb';
 const ETHERSCAN_KEY = 'MBF1F8G1BRUC7F8CF7PMEM3Z5RNZYWD5QH';
 
 function owsCmd(cmd) {
@@ -20,6 +21,28 @@ function owsCmd(cmd) {
     const nvm = `export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"`;
     return { success: true, output: execSync(`bash -c '${nvm} && ${cmd}'`, { encoding: 'utf8' }).trim() };
   } catch (e) { return { success: false, error: e.message }; }
+}
+
+async function fetchZerionData(address) {
+  try {
+    const key = Buffer.from(ZERION_KEY + ':').toString('base64');
+    const r = await axios.get(
+      `https://api.zerion.io/v1/wallets/${address}/positions/?filter[position_types]=wallet&currency=usd`,
+      { headers: { 'accept': 'application/json', 'authorization': `Basic ${key}` }, timeout: 8000 }
+    );
+    const positions = r.data?.data || [];
+    const totalUsd = positions.reduce((sum, p) => sum + (p.attributes?.value || 0), 0);
+    const chains = [...new Set(positions.map(p => p.relationships?.chain?.data?.id).filter(Boolean))];
+    const tokens = positions.slice(0, 5).map(p => ({
+      symbol: p.attributes?.fungible_info?.symbol || '?',
+      value: p.attributes?.value?.toFixed(2) || '0',
+      chain: p.relationships?.chain?.data?.id || 'unknown'
+    }));
+    return { total_usd: totalUsd.toFixed(2), chains, tokens, powered_by: 'Zerion API' };
+  } catch(e) {
+    console.log('Zerion error:', e.message);
+    return null;
+  }
 }
 
 async function fetchAlliumData(address) {
@@ -167,9 +190,10 @@ app.post('/api/scan', async (req, res) => {
     }
 
     const owsResult = owsCmd(`ows sign message --wallet ${OWS_WALLET} --chain evm --message "RiskScope scan: ${address}"`);
-    const [data, alliumData] = await Promise.all([
+    const [data, alliumData, zerionData] = await Promise.all([
       fetchRealData(address),
-      fetchAlliumData(address)
+      fetchAlliumData(address),
+      fetchZerionData(address)
     ]);
     const risk = calculateRisk(address, data);
 
@@ -189,6 +213,12 @@ app.post('/api/scan', async (req, res) => {
         wallet: OWS_WALLET,
         output: owsResult.output || owsResult.error
       },
+      zerion: zerionData ? {
+        total_portfolio_usd: zerionData.total_usd,
+        chains: zerionData.chains,
+        top_tokens: zerionData.tokens,
+        powered_by: zerionData.powered_by
+      } : null,
       allium: alliumData ? {
         labels: alliumData.labels,
         has_defi: alliumData.has_defi,

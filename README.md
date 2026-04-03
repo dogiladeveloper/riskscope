@@ -180,3 +180,20 @@ $ ows sign message --wallet observatory-agent --chain evm \
 
 **Wallet:** observatory-agent | **Address:** 0x575AfEdDDE98dC173744D2e02b7e6F84Be58a0Ef  
 **Key exposure:** None — wiped from memory after signing ✓
+
+---
+
+## Zerion Multichain Portfolio
+
+RiskScope integrates Zerion API to show complete multichain portfolio data:
+
+- Total portfolio value in USD across all chains
+- 38+ supported chains (Ethereum, Base, Polygon, Arbitrum, Optimism...)
+- Top token holdings with USD values
+- DeFi positions and NFT data
+```bash
+# Zerion API endpoint used
+GET https://api.zerion.io/v1/wallets/{address}/positions/?currency=usd
+```
+
+**Powered by:** [Zerion API](https://zerion.io/api)

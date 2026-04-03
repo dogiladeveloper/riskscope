@@ -482,7 +482,7 @@ footer {
       </div>
       <div class="search-examples">
         Try: 
-        <a onclick="setAddr('0x742d35Cc6634C0532925a3b844Bc9e7595f2bD0C')">Vitalik.eth</a> · 
+        <a onclick="setAddr('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045')">Vitalik.eth</a> · 
         <a onclick="setAddr('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045')">0xd8dA...</a> ·
         <a onclick="setAddr('0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B')">Random</a>
       </div>
@@ -527,6 +527,13 @@ footer {
       <div class="card">
         <div class="card-title">// TOKEN EXPOSURE</div>
         <div id="res-tokens"></div>
+      </div>
+    </div>
+
+    <div class="card" style="background:linear-gradient(135deg,#0a1a2e,#0d2e1a);border:1px solid #1a3a6e;margin-bottom:24px;">
+      <div class="card-title" style="color:#06b6d4;border-bottom-color:#1a3a6e">// ZERION MULTICHAIN PORTFOLIO</div>
+      <div id="res-zerion" style="font-family:var(--font-mono);font-size:11px;color:#ccc;line-height:2">
+        <span style="color:#888">Powered by Zerion API</span>
       </div>
     </div>
 
@@ -692,6 +699,18 @@ function renderResults(d) {
     }).join('') :
     '<div style="font-family:var(--font-mono);font-size:11px;color:var(--text2);padding:8px 0">No token transfers</div>';
 
+  // Zerion
+  const zerionEl = document.getElementById('res-zerion');
+  if (zerionEl && d.zerion) {
+    const z = d.zerion;
+    zerionEl.innerHTML =
+      '<div>TOTAL PORTFOLIO: <span style="color:#06b6d4;font-size:14px;font-weight:700">$' + parseFloat(z.total_portfolio_usd).toLocaleString() + ' USD</span></div>' +
+      '<div>ACTIVE CHAINS: <span style="color:#06b6d4">' + z.chains.length + ' chains</span> — ' + z.chains.slice(0,5).join(', ') + '...</div>' +
+      '<div style="margin-top:6px">TOP HOLDINGS:</div>' +
+      z.top_tokens.map(t => '<div style="margin-left:12px">• ' + t.symbol + ' <span style="color:#06b6d4">$' + parseFloat(t.value).toLocaleString() + '</span> on ' + t.chain + '</div>').join('') +
+      '<div style="margin-top:8px;font-size:9px;color:#666">✓ ' + z.powered_by + '</div>';
+  }
+
   // Allium
   const alliumEl = document.getElementById('res-allium');
   if (alliumEl && d.allium) {
@@ -726,5 +745,16 @@ document.getElementById('addr-input').addEventListener('keypress', e => {
   if (e.key === 'Enter') scanWallet();
 });
 </script>
+  <div style="text-align:center;padding:16px 0;border-top:1px solid #2a2a45;margin-top:8px;font-family:monospace;font-size:10px;color:#555;letter-spacing:2px">
+    POWERED BY: 
+    <span style="color:#a78bfa">OWS</span> · 
+    <span style="color:#67e8f9">XMTP</span> · 
+    <span style="color:#6ee7b7">ALLIUM</span> · 
+    <span style="color:#fde047">MOONPAY</span> · 
+    <span style="color:#a5b4fc">DFLOW</span> · 
+    <span style="color:#fb923c">MYRIAD</span> · 
+    <span style="color:#f472b6">ZERION</span> · 
+    <span style="color:#34d399">POLYGON</span>
+  </div>
 </body>
 </html>
