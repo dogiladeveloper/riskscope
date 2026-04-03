@@ -409,9 +409,23 @@ footer {
 .footer-links a:hover { color: #fff; }
 
 @media (max-width: 768px) {
-  .hero { grid-template-columns: 1fr; gap: 40px; padding: 40px 0; }
+  .hero { grid-template-columns: 1fr; gap: 32px; padding: 32px 0; }
+  .hero-left h1 { font-size: 56px; }
   .result-grid, .result-grid-3 { grid-template-columns: 1fr; }
   .steps { grid-template-columns: repeat(2, 1fr); }
+  .search-row { flex-direction: column; }
+  .search-btn { width: 100%; padding: 14px; }
+  .container { padding: 0 16px; }
+  .header-inner { flex-wrap: wrap; gap: 8px; }
+  .logo-main { font-size: 22px; }
+  .result-header { flex-direction: column; gap: 16px; }
+  .risk-meter { text-align: left; }
+  .risk-score { font-size: 48px; }
+  .tx-item { grid-template-columns: 80px 1fr; font-size: 9px; }
+  .tx-item .tx-value { display: none; }
+  .payment-card { flex-direction: column; gap: 8px; }
+  .footer-inner { flex-direction: column; gap: 16px; text-align: center; }
+  .hero-stats { gap: 24px; }
 }
 </style>
 </head>
@@ -579,10 +593,23 @@ function setAddr(addr) {
 }
 
 async function scanWallet() {
-  const addr = document.getElementById('addr-input').value.trim();
+  let addr = document.getElementById('addr-input').value.trim();
+  
+  // ENS resolution
   if (!addr.match(/^0x[0-9a-fA-F]{40}$/)) {
-    alert('Please enter a valid Ethereum address (0x...)');
-    return;
+    if (addr.includes('.eth') || addr.includes('.xyz')) {
+      try {
+        const r = await fetch('https://api.ensdata.net/' + addr);
+        const d = await r.json();
+        if (d.address) { addr = d.address; }
+        else { alert('ENS name not found. Please try a 0x address.'); return; }
+      } catch(e) {
+        alert('Could not resolve ENS name. Please use a 0x address.'); return;
+      }
+    } else {
+      alert('Please enter a valid Ethereum address (0x...) or ENS name (.eth)');
+      return;
+    }
   }
 
   document.getElementById('loading').className = 'loading-overlay show';
@@ -628,7 +655,7 @@ function renderResults(d) {
   document.getElementById('res-stats').innerHTML = `
     <div class="stat-row"><span class="stat-row-label">ETH BALANCE</span><span class="stat-row-val">${d.data.balance_eth} ETH</span></div>
     <div class="stat-row"><span class="stat-row-label">TX COUNT</span><span class="stat-row-val">${d.data.tx_count}</span></div>
-    <div class="stat-row"><span class="stat-row-label">TOKEN TRANSFERS</span><span class="stat-row-val">${d.data.token_transfers?.length || 0}</span></div>
+    <div class="stat-row"><span class="stat-row-label">TOKEN TRANSFERS</span><span class="stat-row-val">${d.data.token_count || d.data.token_transfers?.length || 0}</span></div>
     <div class="stat-row"><span class="stat-row-label">COUNTERPARTIES</span><span class="stat-row-val">${s.unique_counterparties}</span></div>
     <div class="stat-row"><span class="stat-row-label">CONTRACT OPS</span><span class="stat-row-val">${s.contract_interactions ? 'YES' : 'NO'}</span></div>
   `;
@@ -639,19 +666,23 @@ function renderResults(d) {
     <div class="tx-item">
       <span class="tx-hash">${tx.hash ? tx.hash.substring(0,12)+'...' : 'N/A'}</span>
       <span class="tx-type">${tx.input && tx.input !== '0x' ? 'CONTRACT' : 'TRANSFER'} → ${tx.to ? tx.to.substring(0,10)+'...' : 'N/A'}</span>
-      <span class="tx-value">${tx.value ? (parseInt(tx.value)/1e18).toFixed(4) : '0'} ETH</span>
+      <span class="tx-value">${tx.value && parseInt(tx.value) > 0 ? (parseInt(tx.value)/1e18).toFixed(6) : '< 0.000001'} ETH</span>
     </div>
   `).join('') : '<div style="font-family:var(--font-mono);font-size:11px;color:var(--text2);padding:12px 0">No recent transactions found</div>';
 
   // Tokens
   const tokens = d.data.tokens || [];
   document.getElementById('res-tokens').innerHTML = tokens.length ? 
-    tokens.map(t => `
+    tokens.map(t => {
+      const sym = t.tokenSymbol || t.symbol || 'UNKNOWN';
+      const name = t.tokenName || t.name || '';
+      const val = t.value && t.tokenDecimal ? (parseInt(t.value) / Math.pow(10, parseInt(t.tokenDecimal))).toFixed(2) : t.value || '';
+      return `
       <div class="stat-row">
-        <span class="stat-row-label">${t.tokenSymbol || 'UNKNOWN'}</span>
-        <span class="stat-row-val" style="font-size:10px">${t.tokenName || ''}</span>
-      </div>
-    `).join('') :
+        <span class="stat-row-label">${sym}</span>
+        <span class="stat-row-val" style="font-size:10px">${val} ${sym}</span>
+      </div>`;
+    }).join('') :
     '<div style="font-family:var(--font-mono);font-size:11px;color:var(--text2);padding:8px 0">No token transfers</div>';
 
   // OWS proof
