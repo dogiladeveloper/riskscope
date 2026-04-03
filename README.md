@@ -165,3 +165,18 @@ riskscope/
 ---
 
 *Built with ❤️ using Open Wallet Standard v1.2.0*
+
+---
+
+## Live OWS Signing Proof
+
+Every scan is cryptographically signed by the OWS observatory-agent wallet:
+```bash
+$ ows sign message --wallet observatory-agent --chain evm \
+    --message "RiskScope: wallet intelligence powered by OWS v1.2.0"
+
+3bfdc809b526e1eb9ffba1a9bc35839207954fa7b2468fcbc2568237a31c8d6951bbf3edad680d2e9885418b9969da038a3783b7d9c4e62feb983b915f2f38f41b
+```
+
+**Wallet:** observatory-agent | **Address:** 0x575AfEdDDE98dC173744D2e02b7e6F84Be58a0Ef  
+**Key exposure:** None — wiped from memory after signing ✓
